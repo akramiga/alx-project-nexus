@@ -15,8 +15,28 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from graphene_django.views import GraphQLView
+from django.views.decorators.csrf import csrf_exempt
+from django.urls import path, include
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from django.views.generic import TemplateView
+from graphene_django.views import CSRFExemptGraphQLView
+
+@ensure_csrf_cookie
+def csrf_token_view(request):
+    """Standalone endpoint to get CSRF token"""
+    token = get_token(request)
+    return JsonResponse({'csrfToken': token})
+
+@ensure_csrf_cookie
+def graphql_csrf_view(request):
+    """GraphQL endpoint with CSRF cookie ensured"""
+    return CSRFExemptGraphQLView.as_view(graphiql=True)(request)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("graphql/", csrf_exempt(GraphQLView.as_view(graphiql=True))),
 ]

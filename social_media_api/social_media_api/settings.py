@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import datetime
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,10 +37,51 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "graphene_django",
     'users',
     'posts',
 ]
 
+GRAPHENE = {
+    "SCHEMA": "social_media_api.schema.schema",  # global schema file
+    "MIDDLEWARE": [
+        "graphql_jwt.middleware.JSONWebTokenMiddleware",
+    ],
+}
+
+AUTHENTICATION_BACKENDS = [
+    "graphql_jwt.backends.JSONWebTokenBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# JWT Configuration for secure HTTP-only cookies
+GRAPHQL_JWT = {
+    # Token expiration
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=15),  # Short access token
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),  # Longer refresh token
+    
+    # Enable HTTP-only cookies
+    'JWT_COOKIE_SECURE': True,  # Set to True in production with HTTPS
+    'JWT_COOKIE_HTTP_ONLY': True,  # Prevent XSS attacks
+    'JWT_COOKIE_SAMESITE': 'Lax',  # CSRF protection
+    'JWT_COOKIE_NAME': 'access_token',
+    
+    # Refresh token settings
+    'JWT_LONG_RUNNING_REFRESH_TOKEN': True,  # Enable refresh tokens
+    'JWT_REFRESH_TOKEN_COOKIE_NAME': 'refresh_token',
+    'JWT_REFRESH_TOKEN_N_BYTES': 20,
+    
+    # Security settings
+    'JWT_VERIFY_EXPIRATION': True,
+    'JWT_ALGORITHM': 'HS256',
+    'JWT_ALLOW_REFRESH': True,
+    
+    # Remove token from schema for cookie-based auth
+    'JWT_HIDE_TOKEN_FIELDS': True,
+}
+# For development, set secure to False
+if DEBUG:
+    GRAPHQL_JWT['JWT_COOKIE_SECURE'] = False
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
