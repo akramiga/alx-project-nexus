@@ -6,6 +6,8 @@ import logging
 import traceback
 from django.db import transaction
 import graphql_jwt
+from graphql_jwt import ObtainJSONWebToken
+
 
 UserModel = get_user_model()
 
@@ -43,7 +45,7 @@ class RegisterUser(graphene.Mutation):
         username = graphene.String(required=True)
         password = graphene.String(required=True)
 
-    def mutate(self, info, email, username, password, full_name):
+    def mutate(self, info, email, username, password):
         logger.info(f"=== DEBUGGING USER CREATION ===")
         logger.info(f"Input - Email: {email} (type: {type(email)})")
         logger.info(f"Input - Username: {username} (type: {type(username)})")
@@ -67,7 +69,7 @@ class RegisterUser(graphene.Mutation):
                     username=username,
                     password=password,
                     info=info,
-                    full_name=full_name
+                   # full_name=full_name
                 )
                 logger.info(f"User created successfully: {user.id}")
                 return RegisterUser(user=user)
@@ -82,14 +84,19 @@ class RegisterUser(graphene.Mutation):
             # Re-raise with more specific error
             raise Exception(f"User creation failed: {str(e)}")
     
-# Custom Login Mutation with HTTP-only cookies
-class LoginUser(graphql_jwt.JSONWebTokenMutation):
-    user = graphene.Field(UserType)
+class LoginUserBuiltIn(ObtainJSONWebToken):
+    """
+    Using the built-in ObtainJSONWebToken mutation
+    """
+    user = graphene.Field('users.schema.UserType')
     success = graphene.Boolean()
     message = graphene.String()
-    
+    token = graphene.String()
     @classmethod
-    def mutate(cls, root, info, **kwargs):
+    def resolve(cls, root, info, **kwargs):
+        return cls(user=info.context.user)   
+    @classmethod
+    def mutate_and_get_payload(cls, root, info, **kwargs):
         # Call the parent mutation to handle JWT creation
         result = super().mutate(root, info, **kwargs)
         
@@ -100,6 +107,7 @@ class LoginUser(graphql_jwt.JSONWebTokenMutation):
                 result.user = user
                 result.success = True
                 result.message = "Login successful!"
+                result.token = result.token
         else:
             result.success = False
             result.message = "Invalid credentials"
@@ -159,8 +167,7 @@ class VerifyToken(graphql_jwt.Verify):
 
 class Mutation(graphene.ObjectType):
     register_user = RegisterUser.Field()
-    # JWT Authentication with HTTP-only cookies
-    login_user = LoginUser.Field()
     logout_user = LogoutUser.Field()
-    refresh_token = RefreshToken.Field()
-    verify_token = VerifyToken.Field()
+    token_auth = LoginUserBuiltIn.Field()
+    verify_token = graphql_jwt.Verify.Field()
+    refresh_token = graphql_jwt.Refresh.Field()

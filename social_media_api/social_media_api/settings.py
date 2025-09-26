@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "graphene_django",
+    "django_filters",
     'users',
     'posts',
 ]
@@ -50,6 +51,7 @@ GRAPHENE = {
 }
 
 AUTHENTICATION_BACKENDS = [
+    "users.backends.EmailOrUsernameBackend",
     "graphql_jwt.backends.JSONWebTokenBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
