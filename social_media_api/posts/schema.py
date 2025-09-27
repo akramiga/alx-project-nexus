@@ -1,7 +1,7 @@
-# posts/schema.py
 import graphene
 from graphene import relay
 from graphene_django import DjangoObjectType
+from graphql_relay.node.node import from_global_id, to_global_id
 from graphene_django.filter import DjangoFilterConnectionField
 from django.contrib.auth import get_user_model
 from .models import Post, Interaction, Comment
@@ -85,7 +85,16 @@ class AddComment(graphene.Mutation):
         user = info.context.user
         if not user.is_authenticated:
             raise Exception("Authentication required")
-        post = Post.objects.get(pk=post_id)
+        
+        # Handle Relay Node ID
+        try:
+            node_type, raw_post_id = from_global_id(post_id)
+            if node_type != "PostNode":
+                raise Exception("Invalid post ID")
+        except Exception:
+            raise Exception("Invalid post ID format")
+            
+        post = Post.objects.get(pk=raw_post_id)
         comment = Comment.objects.create(post=post, author=user, content=content)
         # Update denormalized counter
         post.comments_count = post.comments.count()
@@ -108,12 +117,35 @@ class InteractWithPost(graphene.Mutation):
         if type not in ["like", "share"]:
             raise Exception("Invalid interaction type")
 
-        post = Post.objects.get(pk=post_id)
+        # Handle Relay Node ID decoding
+        try:
+            # Decode the Relay Node ID
+            node_type, raw_post_id = from_global_id(post_id)
+            print(f"Decoded - Type: {node_type}, ID: {raw_post_id}")  # Debug info
+            
+            # Validate it's a PostNode
+            if node_type != "PostNode":
+                raise Exception(f"Expected PostNode, got {node_type}")
+                
+        except ValueError as e:
+            print(f"ValueError decoding Node ID: {e}")
+            raise Exception("Invalid Node ID format")
+        except Exception as e:
+            print(f"Error decoding Node ID: {e}")
+            raise Exception(f"Failed to decode Node ID: {str(e)}")
+
+        try:
+            post = Post.objects.get(pk=raw_post_id)
+        except Post.DoesNotExist:
+            raise Exception(f"Post with ID {raw_post_id} not found")
+        except Exception as e:
+            raise Exception(f"Error finding post: {str(e)}")
+
         interaction, created = Interaction.objects.get_or_create(
             post=post, user=user, type=type
         )
 
-        #fetch like/share counts in a single query
+        # Fetch like/share counts in a single query
         counts = post.interactions.aggregate(
             likes=Count('id', filter=Q(type='like')),
             shares=Count('id', filter=Q(type='share'))
@@ -146,3 +178,4 @@ class Mutation(graphene.ObjectType):
     create_post = CreatePost.Field()
     add_comment = AddComment.Field()
     interact_with_post = InteractWithPost.Field()
+

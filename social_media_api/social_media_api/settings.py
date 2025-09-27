@@ -59,14 +59,17 @@ AUTHENTICATION_BACKENDS = [
 # JWT Configuration for secure HTTP-only cookies
 GRAPHQL_JWT = {
     # Token expiration
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=15),  # Short access token
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(minutes=30),  # Short access token
     'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),  # Longer refresh token
     
     # Enable HTTP-only cookies
-    'JWT_COOKIE_SECURE': True,  # Set to True in production with HTTPS
-    'JWT_COOKIE_HTTP_ONLY': True,  # Prevent XSS attacks
+    'JWT_COOKIE_SECURE': False,  # Set to True in production with HTTPS
+    'JWT_COOKIE_HTTP_ONLY': False, 
+    'JWT_HIDE_TOKEN_FIELDS': False,
+    'JWT_ALLOW_ARGUMENT': True, # Prevent XSS attacks
     'JWT_COOKIE_SAMESITE': 'Lax',  # CSRF protection
     'JWT_COOKIE_NAME': 'access_token',
+    'JWT_ARGUMENT_NAME': 'token',
     
     # Refresh token settings
     'JWT_LONG_RUNNING_REFRESH_TOKEN': True,  # Enable refresh tokens
@@ -78,8 +81,7 @@ GRAPHQL_JWT = {
     'JWT_ALGORITHM': 'HS256',
     'JWT_ALLOW_REFRESH': True,
     
-    # Remove token from schema for cookie-based auth
-    'JWT_HIDE_TOKEN_FIELDS': True,
+
 }
 # For development, set secure to False
 if DEBUG:
