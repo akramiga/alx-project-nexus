@@ -68,7 +68,7 @@ class RegisterUser(graphene.Mutation):
                     email=email,
                     username=username,
                     password=password,
-                    info=info,
+                    #info=info,
                    # full_name=full_name
                 )
                 logger.info(f"User created successfully: {user.id}")
