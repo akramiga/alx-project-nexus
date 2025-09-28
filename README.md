@@ -1,160 +1,325 @@
-# ALX ProDev Backend Engineering Program
+# Social Media API
 
-## Overview
+A Django-based GraphQL API for a social media platform with user authentication, posts, comments, and interactions (likes/shares).
 
-The ALX ProDev Backend Engineering program is an intensive, practical software development curriculum designed to transform aspiring developers into industry-ready backend engineers. This comprehensive program emphasizes hands-on learning through real-world projects, collaborative coding, and mentorship from experienced software professionals.
+## Features
 
-The program follows a project-based learning approach where students build scalable web applications, APIs, and distributed systems while mastering modern backend technologies and industry best practices. Throughout the journey, participants develop both technical expertise and professional soft skills essential for success in today's competitive tech landscape.
+- **User Management**: Registration, authentication with email/username
+- **Posts**: Create and manage social media posts
+- **Comments**: Add comments to posts
+- **Interactions**: Like and share posts
+- **GraphQL API**: Modern API with relay-style pagination
+- **JWT Authentication**: Secure token-based authentication
+- **Admin Interface**: Django admin for content management
 
+## Tech Stack
 
-## Major Learnings
+- **Backend**: Django 5.1
+- **API**: GraphQL (Graphene-Django)
+- **Authentication**: JWT with HTTP-only cookies
+- **Database**: SQLite (development)
+- **Admin**: Django Admin Interface
 
-### Key Technologies Covered
+## Project Structure
 
-#### **Python**
-- Advanced Python programming concepts and object-oriented design
-- Python data structures, algorithms, and design patterns
-- Testing frameworks (unittest, pytest) and debugging techniques
-- Virtual environments and dependency management with pip/pipenv
+```
+social_media_api/
+├── users/                 # User management app
+│   ├── models.py         # Custom user model
+│   ├── schema.py         # GraphQL schema for users
+│   ├── backends.py       # Email/username authentication
+│   └── admin.py          # User admin configuration
+├── posts/                # Posts management app
+│   ├── models.py         # Post, Comment, Interaction models
+│   ├── schema.py         # GraphQL schema for posts
+│   └── admin.py          # Posts admin configuration
+└── social_media_api/     # Main project settings
+    ├── settings.py       # Django settings
+    ├── urls.py          # URL configuration
+    └── schema.py        # Main GraphQL schema
+```
 
-#### **Django**
-- Django framework architecture and MVT pattern
-- Models, Views, and Templates development
-- Django ORM for database operations and relationships
-- Django admin interface and user authentication systems
-- Middleware, signals, and custom management commands
-- Form handling, validation, and security best practices
+## Models
 
-#### **REST APIs**
-- RESTful API design principles and HTTP methods
-- Django REST Framework (DRF) for API development
-- Serializers, ViewSets, and URL routing
-- Authentication and authorization (Token, JWT, OAuth)
-- API versioning, pagination, and filtering
-- API documentation with Swagger/OpenAPI
+### User Model
+- UUID primary key
+- Email and username authentication
+- Profile fields: full_name, bio, profile_image, date_of_birth
+- Custom user manager for email/username login
 
-#### **GraphQL**
-- GraphQL query language and schema design
-- Implementing GraphQL APIs with Graphene-Django
-- Resolvers, mutations, and subscriptions
-- GraphQL vs REST API comparisons and use cases
-- Query optimization and N+1 problem solutions
+### Post Model
+- UUID primary key
+- Author (ForeignKey to User)
+- Content (TextField)
+- Timestamps (created_at, updated_at)
+- Denormalized counters (likes_count, comments_count, shares_count)
 
-#### **Docker**
-- Containerization concepts and Docker fundamentals
-- Writing Dockerfiles and docker-compose configurations
-- Multi-stage builds and image optimization
-- Container orchestration and networking
-- Development environment setup with Docker
-- Production deployment strategies with containers
+### Comment Model
+- UUID primary key
+- Post and Author references
+- Content and timestamp
 
-#### **CI/CD (Continuous Integration/Continuous Deployment)**
-- Version control with Git and collaborative workflows
-- Automated testing pipelines and code quality checks
-- GitHub Actions, GitLab CI, or Jenkins setup
-- Deployment automation and environment management
-- Infrastructure as Code (IaC) principles
-- Monitoring and logging in production environments
+### Interaction Model
+- Like and Share interactions
+- Unique constraint to prevent duplicate interactions
+- UUID primary key
 
-### Important Backend Development Concepts
+## Installation
 
-#### **Database Design**
-- Relational database design principles and normalization
-- Entity-Relationship (ER) modeling and schema design
-- PostgreSQL and MySQL administration and optimization
-- Database indexing, query optimization, and performance tuning
-- Migrations and database version control
-- NoSQL databases (MongoDB, Redis) and when to use them
-- Database backup, recovery, and replication strategies
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd social_media_api
+```
 
-#### **Asynchronous Programming**
-- Understanding synchronous vs asynchronous execution
-- Python asyncio library and async/await syntax
-- Message queues and task processing (Celery, Redis, RabbitMQ)
-- Handling concurrent requests and thread safety
-- Performance benefits and trade-offs of async programming
+2. **Create virtual environment**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-#### **Caching Strategies**
-- Cache hierarchies and levels (browser, CDN, application, database)
-- In-memory caching with Redis and Memcached
-- Django caching framework and cache backends
-- Cache invalidation strategies and cache coherence
-- Cache performance monitoring and metrics
+3. **Install dependencies**
+```bash
+pip install django
+pip install graphene-django
+pip install django-graphql-jwt
+pip install django-filter
+pip install Pillow  # For image handling
+```
 
----
+4. **Run migrations**
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
 
-## Challenges Faced and Solutions Implemented
+5. **Create superuser**
+```bash
+python manage.py createsuperuser
+```
 
-### **Challenge 1: Database Performance Bottlenecks**
-**Problem**: Initial projects experienced slow database queries and poor performance under load.
+6. **Start development server**
+```bash
+python manage.py runserver
+```
 
-**Solution**: 
-- Implemented database indexing strategies for frequently queried fields
-- Optimized Django ORM queries using `select_related()` and `prefetch_related()`
+## API Endpoints
 
-### **Challenge 2: API Security Vulnerabilities**
-**Problem**: Early API implementations lacked proper authentication and were vulnerable to common attacks.
+- **GraphQL Playground**: `http://localhost:8000/graphql/`
+- **Django Admin**: `http://localhost:8000/admin/`
 
-**Solution**:
-- Implemented JWT-based authentication with refresh token rotation
-- Added rate limiting using Django-ratelimit middleware
-- Introduced input validation and sanitization using DRF serializers
-- Implemented CORS policies and CSRF protection
-- Added API logging and monitoring for security events
+## GraphQL Operations
 
-### **Challenge 3: Deployment and Scaling Issues**
-**Problem**: Manual deployment processes were error-prone and applications couldn't handle traffic spikes.
+### Authentication
 
-**Solution**:
-- Containerized applications using Docker for consistent environments
-- Set up automated CI/CD pipelines 
-- Implemented horizontal scaling using load balancers
-- Added application monitoring with logging and alerting systems
+#### Register User
+```graphql
+mutation {
+  registerUser(email: "user@example.com", username: "username", password: "password123") {
+    user {
+      id
+      email
+      username
+    }
+  }
+}
+```
 
+#### Login
+```graphql
+mutation {
+  loginUser(email: "user@example.com", password: "password123") {
+    success
+    token
+    user {
+      id
+      username
+      email
+    }
+  }
+}
+```
 
-### **Challenge 4: Asynchronous Task Management**
-**Problem**: Long-running tasks were blocking API responses and degrading user experience.
+#### Get Current User
+```graphql
+query {
+  me {
+    id
+    username
+    email
+    fullName
+    bio
+  }
+}
+```
 
-**Solution**:
-- Integrated Celery with Redis for background task processing
-- Implemented task queues for email sending, image processing, and report generation
+### Posts
 
+#### Create Post
+```graphql
+mutation {
+  createPost(content: "This is my first post!") {
+    post {
+      id
+      content
+      author {
+        username
+      }
+      createdAt
+      likesCount
+      commentsCount
+    }
+  }
+}
+```
 
----
+#### Get Posts
+```graphql
+query {
+  posts(first: 10) {
+    edges {
+      node {
+        id
+        content
+        author {
+          username
+        }
+        createdAt
+        likesCount
+        commentsCount
+        sharesCount
+      }
+    }
+  }
+}
+```
 
-## Best Practices and Personal Takeaways
+#### Add Comment
+```graphql
+mutation {
+  addComment(postId: "UG9zdE5vZGU6...", content: "Great post!") {
+    comment {
+      id
+      content
+      author {
+        username
+      }
+      createdAt
+    }
+  }
+}
+```
 
-### **Code Quality and Maintainability**
-- **Write Clean, Readable Code**: Follow PEP 8 standards and use meaningful variable names
-- **Test-Driven Development**: Write tests before implementation to ensure reliability
-- **Code Reviews**: Implement peer review processes to catch bugs early and share knowledge
-- **Documentation**: Maintain comprehensive API documentation and inline code comments
+#### Like/Share Post
+```graphql
+mutation {
+  interactWithPost(postId: "UG9zdE5vZGU6...", type: "like") {
+    interaction {
+      id
+      type
+      user {
+        username
+      }
+      createdAt
+    }
+  }
+}
+```
 
+### Queries with Filters
 
-### **Security-First Mindset**
-- **Never Trust User Input**: Always validate and sanitize data from external sources
-- **Implement Defense in Depth**: Use multiple security layers (authentication, authorization, rate limiting)
-- **Keep Dependencies Updated**: Regularly update packages to patch security vulnerabilities
-- **Environment Variables**: Store sensitive configuration in environment variables, never in code
+#### Filter Posts by Content
+```graphql
+query {
+  posts(content_Icontains: "django") {
+    edges {
+      node {
+        id
+        content
+        author {
+          username
+        }
+      }
+    }
+  }
+}
+```
 
-### **Performance and Scalability**
-- **Database Optimization**: Design efficient schemas and optimize queries from the start
-- **Caching Strategy**: Implement appropriate caching at multiple levels
-- **Monitoring and Profiling**: Use tools to identify bottlenecks before they become problems
-- **Scalable Architecture**: Design systems that can handle growth in users and data
+#### Get Comments for a Post
+```graphql
+query {
+  comments(post_Id: "POST_UUID_HERE") {
+    edges {
+      node {
+        id
+        content
+        author {
+          username
+        }
+        createdAt
+      }
+    }
+  }
+}
+```
 
-### **DevOps and Deployment**
-- **Automate Everything**: From testing to deployment, automation reduces errors and saves time
-- **Infrastructure as Code**: Treat infrastructure configuration as code for reproducibility
-- **Monitoring and Logging**: Implement comprehensive logging and alerting for production systems
-- **Backup and Recovery**: Always have tested backup and disaster recovery procedures
+## Authentication Headers
 
-### **Professional Development**
-- **Continuous Learning**: Technology evolves rapidly; stay updated with industry trends
-- **Community Engagement**: Participate in open-source projects and developer communities
-- **Problem-Solving Skills**: Focus on understanding problems deeply before jumping to solutions
-- **Communication**: Technical skills must be paired with clear communication abilities
+For authenticated requests, include the JWT token in headers:
 
----
+```
+Authorization: JWT <your-token-here>
+```
 
+Or use HTTP-only cookies (configured in settings).
+
+## Configuration
+
+### JWT Settings (settings.py)
+```python
+GRAPHQL_JWT = {
+    'JWT_EXPIRATION_DELTA': timedelta(minutes=30),
+    'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
+    'JWT_COOKIE_SECURE': False,  # Set to True in production
+    'JWT_COOKIE_HTTP_ONLY': False,
+    'JWT_ALLOW_ARGUMENT': True,
+}
+```
+
+### Database
+Currently configured for SQLite. For production, update `DATABASES` setting in `settings.py`.
+
+## Development Features
+
+- **Debug Mode**: Enabled by default
+- **GraphiQL Interface**: Interactive GraphQL explorer
+- **Admin Interface**: Full CRUD operations for all models
+- **Logging**: Configured for development debugging
+
+## Production Considerations
+
+1. **Security Settings**:
+   - Set `DEBUG = False`
+   - Update `SECRET_KEY`
+   - Configure `ALLOWED_HOSTS`
+   - Set `JWT_COOKIE_SECURE = True`
+
+2. **Database**: 
+   - Switch to PostgreSQL or MySQL
+   - Configure database credentials
+
+3. **Media Files**:
+   - Configure proper media file handling
+   - Set up cloud storage for profile images
+
+4. **CORS**:
+   - Add django-cors-headers for frontend integration
+
+## API Features
+
+- **Relay-style Pagination**: Efficient cursor-based pagination
+- **Node Interface**: Global object identification
+- **Optimized Queries**: Prefetch related data to avoid N+1 queries
+- **Input Validation**: Proper error handling and validation
+- **Denormalized Counters**: Fast access to like/comment counts
 
